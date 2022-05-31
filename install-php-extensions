@@ -820,6 +820,12 @@ buildRequiredPackageLists() {
 				buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent ^libicu[0-9]+$"
 				buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile libicu-dev"
 				;;
+			ion@alpine)
+				buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile cmake git"
+				;;
+			ion@debian)
+				buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile cmake git"
+				;;
 			ldap@alpine)
 				buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent libldap"
 				buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile openldap-dev"
@@ -970,6 +976,9 @@ buildRequiredPackageLists() {
 			pgsql@debian | pdo_pgsql@debian)
 				buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent libpq5"
 				buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile libpq-dev"
+				;;
+			php_trie@alpine)
+				buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent libstdc++"
 				;;
 			pspell@alpine)
 				buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent aspell-libs"
@@ -2569,6 +2578,25 @@ installRemoteModule() {
 				fi
 			fi
 			;;
+		ion)
+			if ! test -f /usr/local/lib/libionc.so || ! test -f /usr/local/include/ionc/ion.h; then
+				echo 'Installing ion-c... '
+				installRemoteModule_src="$(mktemp -p /tmp/src -d)"
+				git clone -q -c advice.detachedHead=false --depth 1 --branch v1.0.6 https://github.com/amzn/ion-c.git "$installRemoteModule_src/ion"
+				(
+					cd "$installRemoteModule_src/ion"
+					git submodule init -q
+					git submodule update -q
+					mkdir -p build
+					cd build
+					cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-dev
+					make clean
+					make -j$(getProcessorCount) install
+				)
+				rm -rf "$installRemoteModule_src"
+			fi
+			addConfigureOption with-ion "shared,/usr/local"
+			;;
 		ioncube_loader)
 			installIonCubeLoader
 			installRemoteModule_manuallyInstalled=1
@@ -2759,6 +2787,13 @@ installRemoteModule() {
 				fi
 			fi
 			;;
+		php_trie)
+			if ! test -f /usr/local/include/hat-trie/include/tsl/htrie_map.h; then
+				installRemoteModule_src="$(getPackageSource https://codeload.github.com/Tessil/hat-trie/tar.gz/v0.6.0)"
+				mkdir -p /usr/local/include/hat-trie
+				mv "$installRemoteModule_src/include" /usr/local/include/hat-trie
+			fi
+			;;
 		propro)
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 506; then
@@ -2858,7 +2893,7 @@ installRemoteModule() {
 		snuffleupagus)
 			if test -z "$installRemoteModule_path"; then
 				if test -z "$installRemoteModule_version"; then
-					installRemoteModule_version=0.7.1
+					installRemoteModule_version=0.8.2
 				fi
 				installRemoteModule_src="$(getPackageSource https://codeload.github.com/jvoisin/snuffleupagus/tar.gz/v$installRemoteModule_version)"
 				cd "$installRemoteModule_src/src"
@@ -2867,6 +2902,9 @@ installRemoteModule() {
 				make -j$(getProcessorCount) install
 				cd - >/dev/null
 				cp -a "$installRemoteModule_src/config/default.rules" "$PHP_INI_DIR/conf.d/snuffleupagus.rules"
+				if test $(compareVersions "$installRemoteModule_version" 0.8.0) -ge 0; then
+					printf '\n# Disable "PHP version is not officially maintained anymore" message\nsp.global.show_old_php_warning.disable();\n' >>"$PHP_INI_DIR/conf.d/snuffleupagus.rules"
+				fi
 			else
 				if test -f "$installRemoteModule_path/config/default.rules"; then
 					cp -a "$installRemoteModule_path/config/default.rules" "$PHP_INI_DIR/conf.d/snuffleupagus.rules"
@@ -3160,6 +3198,21 @@ installRemoteModule() {
 				elif test $PHP_MAJMIN_VERSION -le 701; then
 					installRemoteModule_version=2.9.8
 				fi
+			fi
+			;;
+		xdiff)
+			if test -z "$installRemoteModule_version"; then
+				if test $PHP_MAJMIN_VERSION -le 506; then
+					installRemoteModule_version=1.5.2
+				fi
+			fi
+			if ! test -f /usr/local/lib/libxdiff.* && ! test -f /usr/lib/libxdiff.* && ! test -f /usr/lib/x86_64*/libxdiff.*; then
+				installRemoteModule_src="$(getPackageSource http://www.xmailserver.org/libxdiff-0.23.tar.gz)"
+				cd -- "$installRemoteModule_src"
+				./configure --disable-shared --disable-dependency-tracking --with-pic
+				make -j$(getProcessorCount)
+				make install
+				cd - >/dev/null
 			fi
 			;;
 		xhprof)

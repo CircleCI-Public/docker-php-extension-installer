@@ -59,6 +59,11 @@ The `http` PHP extension may use the `libidnkit` system library since version 3.
 It's not available on Alpine Linux, so we install it manually.
 We need to monitor new releases at https://jprs.co.jp/idn
 
+### ion
+
+We manually compile the `ion-c` library.
+We need to monitor new releases at https://github.com/amzn/ion-c/releases
+
 ### ionCube Loader
 
 The `ionCube Loader` PHP extension is not available in the PECL archive, so we install it manually.
@@ -68,6 +73,11 @@ We need to monitor new releases at https://www.ioncube.com/news.php
 
 The only available versions of the `mosquitto` PHP extension are all alpha/beta.
 We should switch to the stable release once it will be available.
+
+## php_trie
+
+The `php_trie` PHP extension uses the HAT-trie library.
+We need to monitor new releases at https://github.com/Tessil/hat-trie/releases
 
 ### opencensus
 
@@ -99,6 +109,11 @@ We need to monitor new releases at https://docs.microsoft.com/en-us/sql/connect/
 
 The latest stable release of the `ssh2` PHP extension is very old, so we install the latest beta release.
 We should switch to the stable release once it will be available.
+
+## xdiff
+
+The `xdiff` PHP extension uses the LibXDiff library.
+We need to monitor new releases at http://www.xmailserver.org/xdiff-lib.html
 
 ### zookeeper
 
